@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escritores de Mapa · Panel del Docente</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --parch:#f5edd8; --parch2:#fdf5e6; --parch3:#ede0c0; --parch4:#e8d9b8;
+      --ink:#1a1208; --gold:#b8882a; --gold2:#d4a843; --gold3:#f0c050;
+      --gris:#6b5e48; --gris2:#9a8a70; --gris3:#8b7355;
+      --rust:#993C1D; --teal:#2a5f5a; --green:#3B6D11;
+      --red:#8b1a1a;
+    }
+    html { scroll-behavior:smooth; }
+    body { font-family:'EB Garamond',Georgia,serif; background:var(--parch); color:var(--ink); min-height:100vh; }
+    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 20% 10%,rgba(180,140,60,.08) 0%,transparent 55%),radial-gradient(ellipse at 80% 90%,rgba(140,90,30,.05) 0%,transparent 55%); pointer-events:none; z-index:0; }
+
+    /* FRAME */
+    .frame-outer { position:fixed; inset:6px; border:1px solid rgba(184,136,42,.3); border-radius:3px; pointer-events:none; z-index:300; }
+    .frame-outer::after { content:''; position:absolute; inset:4px; border:0.5px solid rgba(184,136,42,.14); }
+    .corner { position:fixed; width:34px; height:34px; z-index:301; pointer-events:none; }
+    .corner-tl{top:6px;left:6px;} .corner-tr{top:6px;right:6px;transform:scaleX(-1);}
+    .corner-bl{bottom:6px;left:6px;transform:scaleY(-1);} .corner-br{bottom:6px;right:6px;transform:scale(-1,-1);}
+
+    .wrap { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:20px 22px 60px; }
+
+    /* ── LOGIN SCREEN ──────────────────────────────────────── */
+    .login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .login-card { width:100%; max-width:360px; text-align:center; }
+    .login-icon { font-size:44px; margin-bottom:16px; display:block; }
+    .login-title { font-family:'Cinzel',serif; font-size:20px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+    .login-sub { font-family:'EB Garamond',serif; font-style:italic; font-size:13px; color:var(--gris); margin-bottom:28px; }
+    .login-field { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; text-align:left; }
+    .login-label { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1.5px; color:var(--gold); }
+    .login-input { padding:11px 14px; border:0.5px solid rgba(184,136,42,.4); border-radius:9px; font-family:'EB Garamond',serif; font-size:16px; color:var(--ink); background:var(--parch2); outline:none; width:100%; transition:border-color .2s; }
+    .login-input:focus { border-color:rgba(184,136,42,.7); }
+    .login-error { font-family:'EB Garamond',serif; font-style:italic; font-size:13px; color:var(--red); text-align:center; min-height:18px; margin-bottom:8px; }
+    .login-btn { width:100%; padding:13px; background:var(--ink); color:var(--gold2); font-family:'Cinzel',serif; font-size:11px; font-weight:700; letter-spacing:2px; border:none; border-radius:9px; cursor:pointer; transition:all .2s; }
+    .login-btn:hover { background:#2d1f0a; color:var(--gold3); }
+    .login-ornament { margin-top:20px; font-size:9px; color:var(--gold); letter-spacing:8px; opacity:.5; }
+
+    /* ── MAIN PANEL ────────────────────────────────────────── */
+    .panel { display:none; }
+    .panel.active { display:block; animation:rise .3s ease; }
+    @keyframes rise { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Header */
+    .hdr { display:flex; align-items:center; justify-content:space-between; padding:20px 0 16px; border-bottom:1px solid rgba(184,136,42,.35); margin-bottom:26px; flex-wrap:wrap; gap:12px; }
+    .hdr-left { display:flex; flex-direction:column; }
+    .hdr-pre { font-family:'Cinzel',serif; font-size:9px; letter-spacing:3px; color:var(--gold); margin-bottom:3px; }
+    .hdr-title { font-family:'Cinzel',serif; font-size:22px; font-weight:700; color:var(--ink); }
+    .hdr-title span { color:var(--gold); }
+    .hdr-right { display:flex; align-items:center; gap:10px; }
+    .live-badge { display:flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; background:rgba(42,95,90,.08); border:0.5px solid rgba(42,95,90,.35); font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; color:var(--teal); }
+    .live-dot { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:blink 1.4s infinite; }
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .logout-btn { padding:6px 14px; border:0.5px solid rgba(107,94,72,.35); border-radius:20px; background:transparent; font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; color:var(--gris); cursor:pointer; transition:all .2s; }
+    .logout-btn:hover { background:rgba(107,94,72,.08); }
+
+    /* Stats row */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:26px; }
+    .stat-card { background:var(--parch3); border-radius:9px; padding:14px 12px; text-align:center; border:0.5px solid rgba(184,136,42,.2); }
+    .stat-n { font-family:'Cinzel',serif; font-size:26px; font-weight:700; color:var(--ink); }
+    .stat-l { font-family:'EB Garamond',serif; font-style:italic; font-size:11px; color:var(--gris3); margin-top:2px; }
+
+    /* Section divider */
+    .divider { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+    .divider::before,.divider::after { content:''; flex:1; height:.5px; background:rgba(184,136,42,.38); }
+    .divider-txt { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2.5px; color:var(--gold); white-space:nowrap; }
+
+    /* ── GÉNERO DEL DÍA ──────────────────────────────────── */
+    .genre-section { background:rgba(196,131,42,.04); border:0.5px solid rgba(184,136,42,.3); border-radius:12px; padding:20px; margin-bottom:26px; }
+    .genre-status { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+    .genre-status-icon { font-size:32px; }
+    .genre-status-info { flex:1; }
+    .genre-status-name { font-family:'Cinzel',serif; font-size:16px; font-weight:700; color:var(--ink); }
+    .genre-status-sub { font-family:'EB Garamond',serif; font-style:italic; font-size:12px; color:var(--gris); }
+    .genre-active-badge { padding:4px 10px; border-radius:4px; font-family:'Cinzel',serif; font-size:8px; letter-spacing:1px; }
+    .genre-active-badge.on { background:rgba(42,95,90,.1); color:var(--teal); border:0.5px solid rgba(42,95,90,.3); }
+    .genre-active-badge.off { background:rgba(107,94,72,.08); color:var(--gris2); border:0.5px solid rgba(107,94,72,.2); }
+
+    .genre-grid-doc { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+    .gc-doc { border:0.5px solid rgba(184,136,42,.3); border-radius:9px; padding:12px 8px 10px; cursor:pointer; text-align:center; transition:all .2s; background:rgba(245,237,216,.5); }
+    .gc-doc:hover { background:rgba(196,131,42,.08); transform:translateY(-1px); }
+    .gc-doc.sel { border:1.5px solid var(--ink); background:rgba(26,18,8,.04); }
+    .gc-doc-emoji { font-size:20px; display:block; margin-bottom:4px; }
+    .gc-doc-name { font-family:'Cinzel',serif; font-size:9px; font-weight:600; color:var(--ink); }
+
+    .genre-controls { display:flex; gap:8px; }
+    .btn-teal { flex:1; padding:11px; background:var(--teal); color:#e8f4f2; font-family:'Cinzel',serif; font-size:10px; letter-spacing:1.5px; border:none; border-radius:8px; cursor:pointer; transition:all .2s; }
+    .btn-teal:hover { background:#1a4a46; }
+    .btn-teal:disabled { opacity:.35; cursor:not-allowed; }
+    .btn-outline-rust { flex:1; padding:11px; background:transparent; color:var(--rust); font-family:'Cinzel',serif; font-size:10px; letter-spacing:1.5px; border:0.5px solid rgba(153,60,29,.4); border-radius:8px; cursor:pointer; transition:all .2s; }
+    .btn-outline-rust:hover { background:rgba(153,60,29,.06); }
+
+    /* ── TEXTOS DE ALUMNOS ───────────────────────────────── */
+    .filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+    .filter-select { padding:7px 12px; border:0.5px solid rgba(184,136,42,.35); border-radius:8px; background:var(--parch2); font-family:'Cinzel',serif; font-size:10px; color:var(--ink); outline:none; cursor:pointer; }
+    .filter-search { flex:1; min-width:160px; padding:7px 12px; border:0.5px solid rgba(184,136,42,.35); border-radius:8px; background:var(--parch2); font-family:'EB Garamond',serif; font-size:14px; color:var(--ink); outline:none; }
+    .filter-search::placeholder { color:rgba(107,94,72,.5); font-style:italic; }
+    .refresh-btn { padding:7px 14px; border:0.5px solid rgba(184,136,42,.35); border-radius:8px; background:transparent; font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; color:var(--gold); cursor:pointer; transition:all .2s; }
+    .refresh-btn:hover { background:rgba(184,136,42,.08); }
+
+    .textos-list { display:flex; flex-direction:column; gap:12px; }
+    .texto-card { border:0.5px solid rgba(184,136,42,.3); border-radius:11px; background:var(--parch2); overflow:hidden; transition:all .2s; }
+    .texto-card:hover { border-color:rgba(184,136,42,.5); }
+    .texto-card-header { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; }
+    .texto-avatar { width:38px; height:38px; border-radius:50%; background:var(--parch3); border:1px solid rgba(184,136,42,.3); display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:13px; font-weight:700; color:var(--gold); flex-shrink:0; }
+    .texto-meta { flex:1; min-width:0; }
+    .texto-nombre { font-family:'Cinzel',serif; font-size:12px; font-weight:600; color:var(--ink); margin-bottom:2px; }
+    .texto-info { font-family:'EB Garamond',serif; font-style:italic; font-size:11px; color:var(--gris2); }
+    .texto-badges { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+    .badge { padding:3px 8px; border-radius:4px; font-family:'Cinzel',serif; font-size:8px; letter-spacing:.5px; }
+    .badge-genre { background:rgba(196,131,42,.1); color:#6b4010; border:0.5px solid rgba(184,136,42,.25); }
+    .badge-words { background:rgba(42,95,90,.08); color:var(--teal); border:0.5px solid rgba(42,95,90,.2); }
+    .badge-feedback { background:rgba(59,109,17,.1); color:var(--green); border:0.5px solid rgba(59,109,17,.25); }
+    .texto-chevron { font-size:11px; color:var(--gris2); transition:transform .25s; flex-shrink:0; }
+    .texto-card.open .texto-chevron { transform:rotate(90deg); }
+
+    .texto-body { display:none; padding:0 16px 16px; border-top:0.5px solid rgba(184,136,42,.2); margin-top:0; }
+    .texto-card.open .texto-body { display:block; }
+
+    .texto-mapa { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0; }
+    .mapa-item { background:var(--parch); border:0.5px solid rgba(184,136,42,.2); border-radius:7px; padding:9px 11px; }
+    .mapa-item-label { font-family:'Cinzel',serif; font-size:8px; letter-spacing:1px; color:var(--gold); margin-bottom:4px; }
+    .mapa-item-val { font-family:'EB Garamond',serif; font-style:italic; font-size:12px; color:var(--ink); line-height:1.4; }
+
+    .chispa-rem { padding:9px 13px; background:rgba(196,131,42,.06); border-left:2px solid rgba(184,136,42,.4); border-radius:0 7px 7px 0; margin-bottom:12px; font-family:'EB Garamond',serif; font-style:italic; font-size:13px; color:var(--gris); }
+
+    .texto-content { font-family:'EB Garamond',serif; font-size:16px; line-height:1.8; color:var(--ink); white-space:pre-wrap; padding:12px 14px; background:var(--parch); border:0.5px solid rgba(184,136,42,.2); border-radius:8px; margin-bottom:14px; }
+
+    /* Feedback */
+    .feedback-section { margin-top:4px; }
+    .feedback-label { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1.5px; color:var(--gold); margin-bottom:7px; }
+    .feedback-existing { padding:10px 13px; background:rgba(42,95,90,.06); border:0.5px solid rgba(42,95,90,.3); border-radius:8px; margin-bottom:10px; font-family:'EB Garamond',serif; font-style:italic; font-size:14px; color:var(--teal); line-height:1.5; }
+    .feedback-textarea { width:100%; padding:10px 13px; border:0.5px solid rgba(184,136,42,.35); border-radius:8px; font-family:'EB Garamond',serif; font-size:14px; color:var(--ink); background:var(--parch2); outline:none; resize:vertical; min-height:72px; transition:border-color .2s; }
+    .feedback-textarea:focus { border-color:rgba(184,136,42,.65); }
+    .feedback-actions { display:flex; gap:8px; margin-top:8px; }
+    .btn-save-feedback { flex:1; padding:10px; background:var(--ink); color:var(--gold2); font-family:'Cinzel',serif; font-size:10px; letter-spacing:1.5px; border:none; border-radius:8px; cursor:pointer; transition:all .2s; }
+    .btn-save-feedback:hover { background:#2d1f0a; }
+    .btn-delete { padding:10px 14px; background:transparent; color:var(--red); font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; border:0.5px solid rgba(139,26,26,.3); border-radius:8px; cursor:pointer; transition:all .2s; }
+    .btn-delete:hover { background:rgba(139,26,26,.06); }
+
+    /* EMPTY STATE */
+    .empty-state { text-align:center; padding:48px 20px; }
+    .empty-icon { font-size:36px; margin-bottom:12px; display:block; opacity:.4; }
+    .empty-txt { font-family:'EB Garamond',serif; font-style:italic; font-size:15px; color:var(--gris2); }
+
+    /* LOADING */
+    .loading { text-align:center; padding:32px; font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px; color:var(--gold); opacity:.6; }
+
+    /* TOAST */
+    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--gold2); font-family:'Cinzel',serif; font-size:10px; letter-spacing:1px; padding:10px 20px; border-radius:20px; opacity:0; transition:all .3s; z-index:400; pointer-events:none; white-space:nowrap; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    @media(max-width:600px) {
+      .stats-row { grid-template-columns:repeat(2,1fr); }
+      .genre-grid-doc { grid-template-columns:repeat(3,1fr); }
+      .texto-mapa { grid-template-columns:1fr 1fr; }
+      .filters { flex-direction:column; }
+      .filter-search { width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame-outer"></div>
+  <svg class="corner corner-tl" viewBox="0 0 34 34" fill="none"><path d="M4 30L4 8Q4 4 8 4L30 4" stroke="#b8882a" stroke-width="1.5" opacity=".55"/><circle cx="4" cy="4" r="2.5" fill="#b8882a" opacity=".55"/></svg>
+  <svg class="corner corner-tr" viewBox="0 0 34 34" fill="none"><path d="M4 30L4 8Q4 4 8 4L30 4" stroke="#b8882a" stroke-width="1.5" opacity=".55"/><circle cx="4" cy="4" r="2.5" fill="#b8882a" opacity=".55"/></svg>
+  <svg class="corner corner-bl" viewBox="0 0 34 34" fill="none"><path d="M4 30L4 8Q4 4 8 4L30 4" stroke="#b8882a" stroke-width="1.5" opacity=".55"/><circle cx="4" cy="4" r="2.5" fill="#b8882a" opacity=".55"/></svg>
+  <svg class="corner corner-br" viewBox="0 0 34 34" fill="none"><path d="M4 30L4 8Q4 4 8 4L30 4" stroke="#b8882a" stroke-width="1.5" opacity=".55"/><circle cx="4" cy="4" r="2.5" fill="#b8882a" opacity=".55"/></svg>
+
+  <!-- ══ LOGIN ═══════════════════════════════════════════════ -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <span class="login-icon">🏛</span>
+      <div class="login-title">Scriptorium</div>
+      <div class="login-sub">Panel del Docente — acceso restringido</div>
+      <div class="login-field">
+        <span class="login-label">Contraseña</span>
+        <input class="login-input" type="password" id="loginInput" placeholder="••••••"
+               onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button class="login-btn" onclick="doLogin()">✦ Entrar al scriptorium</button>
+      <div class="login-ornament">✦ ✦ ✦</div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL ════════════════════════════════════════════════ -->
+  <div class="wrap">
+    <div class="panel" id="mainPanel">
+
+      <!-- Header -->
+      <header class="hdr">
+        <div class="hdr-left">
+          <div class="hdr-pre">Scriptorium · Panel del Docente</div>
+          <div class="hdr-title">Escritores de <span>Mapa</span></div>
+        </div>
+        <div class="hdr-right">
+          <div class="live-badge"><span class="live-dot"></span><span id="liveCount">0 textos</span></div>
+          <button class="logout-btn" onclick="doLogout()">Salir ↗</button>
+        </div>
+      </header>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-n" id="statTotal">0</div><div class="stat-l">textos guardados</div></div>
+        <div class="stat-card"><div class="stat-n" id="statHoy">0</div><div class="stat-l">escritos hoy</div></div>
+        <div class="stat-card"><div class="stat-n" id="statMedia">0</div><div class="stat-l">palabras de media</div></div>
+        <div class="stat-card"><div class="stat-n" id="statFeedback">0</div><div class="stat-l">con feedback</div></div>
+      </div>
+
+      <!-- Género del día -->
+      <div class="divider"><span class="divider-txt">Género del día</span></div>
+      <div class="genre-section">
+        <div class="genre-status">
+          <span class="genre-status-icon" id="gsIcon">📖</span>
+          <div class="genre-status-info">
+            <div class="genre-status-name" id="gsName">Sin género fijado — libre elección</div>
+            <div class="genre-status-sub">Los alumnos pueden elegir cualquier género</div>
+          </div>
+          <span class="genre-active-badge off" id="gsBadge">Libre</span>
+        </div>
+        <div class="genre-grid-doc" id="genreGridDoc"></div>
+        <div class="genre-controls">
+          <button class="btn-teal" id="btnFijarGenero" onclick="fijarGenero()" disabled>✦ Fijar género para la clase</button>
+          <button class="btn-outline-rust" onclick="liberarGenero()">Liberar elección</button>
+        </div>
+      </div>
+
+      <!-- Textos -->
+      <div class="divider"><span class="divider-txt">Textos de los alumnos</span></div>
+      <div class="filters">
+        <input class="filter-search" type="text" id="searchInput" placeholder="Buscar por nombre o texto..." oninput="renderTextos()">
+        <select class="filter-select" id="filterGenero" onchange="renderTextos()">
+          <option value="">Todos los géneros</option>
+          <option value="terror">👻 Terror</option>
+          <option value="aventura">🗺️ Aventura</option>
+          <option value="humor">😂 Humor</option>
+          <option value="fantasia">🐉 Fantasía</option>
+          <option value="realista">🏫 Realista</option>
+          <option value="ciencia">🚀 Sci-fi</option>
+        </select>
+        <select class="filter-select" id="filterFeedback" onchange="renderTextos()">
+          <option value="">Todos</option>
+          <option value="sin">Sin feedback</option>
+          <option value="con">Con feedback</option>
+        </select>
+        <button class="refresh-btn" onclick="loadTextos()">↻ Actualizar</button>
+      </div>
+      <div id="textosContainer"><div class="loading">Cargando textos del scriptorium...</div></div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getDatabase, ref, get, set, remove, onValue, update }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDemo-reemplaza-con-tu-config",
+      authDomain: "app-reserva-de-portatiles.firebaseapp.com",
+      databaseURL: "https://app-reserva-de-portatiles-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "app-reserva-de-portatiles",
+      storageBucket: "app-reserva-de-portatiles.appspot.com",
+      messagingSenderId: "000000000000",
+      appId: "1:000000000000:web:000000000000"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // ── LOAD ALL TEXTOS ────────────────────────────────────
+    window._fbLoadTextos = async function() {
+      try {
+        const snap = await get(ref(db, 'escritores/textos'));
+        if (snap.exists()) {
+          const raw = snap.val();
+          // Convert object to sorted array
+          const arr = Object.entries(raw).map(([key, val]) => ({...val, _key: key}));
+          arr.sort((a,b) => (b.timestamp||0)-(a.timestamp||0));
+          window._textos = arr;
+        } else {
+          window._textos = [];
+        }
+      } catch(e) {
+        console.warn('Firebase error', e);
+        window._textos = [];
+      }
+      window.renderTextos();
+      window.updateStats();
+    };
+
+    // ── LOAD SETTINGS ─────────────────────────────────────
+    window._fbLoadSettings = async function() {
+      try {
+        const snap = await get(ref(db, 'escritores/settings'));
+        if (snap.exists()) {
+          const s = snap.val();
+          window._settings = s;
+          if (s.generoFijado && s.generoId) {
+            window.applyGenreStatus(s.generoId);
+          }
+        }
+      } catch(e) { console.warn('Settings error', e); }
+    };
+
+    // ── SAVE SETTINGS ─────────────────────────────────────
+    window._fbSaveSettings = async function(data) {
+      await set(ref(db, 'escritores/settings'), data);
+    };
+
+    // ── SAVE FEEDBACK ─────────────────────────────────────
+    window._fbSaveFeedback = async function(key, feedback) {
+      await update(ref(db, 'escritores/textos/'+key), { feedback, feedbackAt: new Date().toISOString() });
+    };
+
+    // ── DELETE TEXTO ───────────────────────────────────────
+    window._fbDeleteTexto = async function(key) {
+      await remove(ref(db, 'escritores/textos/'+key));
+    };
+
+    // ── REALTIME LISTENER for live count ──────────────────
+    onValue(ref(db, 'escritores/textos'), snap => {
+      const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+      const el = document.getElementById('liveCount');
+      if (el) el.textContent = count + (count===1?' texto':' textos');
+    });
+  </script>
+
+  <script>
+    const PASS = '112233';
+    const GENRES_DOC = [
+      {id:'terror',  name:'Terror',   emoji:'👻'},
+      {id:'aventura',name:'Aventura', emoji:'🗺️'},
+      {id:'humor',   name:'Humor',    emoji:'😂'},
+      {id:'fantasia',name:'Fantasía', emoji:'🐉'},
+      {id:'realista',name:'Realista', emoji:'🏫'},
+      {id:'ciencia', name:'Sci-fi',   emoji:'🚀'},
+    ];
+
+    window._textos   = [];
+    window._settings = {};
+    let selDocGenre  = null;
+
+    // ── TOAST ──────────────────────────────────────────────
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // ── LOGIN ──────────────────────────────────────────────
+    function doLogin() {
+      const val = document.getElementById('loginInput').value;
+      if (val === PASS) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainPanel').classList.add('active');
+        initPanel();
+      } else {
+        document.getElementById('loginError').textContent = 'Contraseña incorrecta. Inténtalo de nuevo.';
+        document.getElementById('loginInput').value = '';
+      }
+    }
+    window.doLogin = doLogin;
+
+    function doLogout() {
+      document.getElementById('mainPanel').classList.remove('active');
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('loginInput').value = '';
+      document.getElementById('loginError').textContent = '';
+    }
+    window.doLogout = doLogout;
+
+    // ── INIT PANEL ────────────────────────────────────────
+    function initPanel() {
+      renderGenreGrid();
+      if (window._fbLoadSettings) window._fbLoadSettings();
+      loadTextos();
+    }
+
+    // ── GENRE GRID ────────────────────────────────────────
+    function renderGenreGrid() {
+      const g = document.getElementById('genreGridDoc');
+      g.innerHTML = '';
+      GENRES_DOC.forEach(gn => {
+        const d = document.createElement('div');
+        d.className = 'gc-doc'; d.id = 'gcdoc_'+gn.id;
+        d.innerHTML = `<span class="gc-doc-emoji">${gn.emoji}</span><div class="gc-doc-name">${gn.name}</div>`;
+        d.addEventListener('click', () => selectDocGenre(gn));
+        g.appendChild(d);
+      });
+    }
+
+    function selectDocGenre(gn) {
+      selDocGenre = gn;
+      document.querySelectorAll('.gc-doc').forEach(c => c.classList.remove('sel'));
+      document.getElementById('gcdoc_'+gn.id).classList.add('sel');
+      document.getElementById('btnFijarGenero').disabled = false;
+    }
+
+    // ── APPLY GENRE STATUS (from Firebase) ───────────────
+    function applyGenreStatus(genreId) {
+      const gn = GENRES_DOC.find(g => g.id === genreId);
+      if (!gn) return;
+      document.getElementById('gsIcon').textContent    = gn.emoji;
+      document.getElementById('gsName').textContent    = gn.name + ' — género fijado para la clase';
+      document.getElementById('gsBadge').textContent   = 'Activo';
+      document.getElementById('gsBadge').className     = 'genre-active-badge on';
+      selDocGenre = gn;
+      document.querySelectorAll('.gc-doc').forEach(c => c.classList.remove('sel'));
+      const el = document.getElementById('gcdoc_'+gn.id);
+      if (el) el.classList.add('sel');
+      document.getElementById('btnFijarGenero').disabled = false;
+    }
+    window.applyGenreStatus = applyGenreStatus;
+
+    async function fijarGenero() {
+      if (!selDocGenre) return;
+      const settings = { generoFijado: true, generoId: selDocGenre.id, updatedAt: new Date().toISOString() };
+      window._settings = settings;
+      try {
+        if (window._fbSaveSettings) await window._fbSaveSettings(settings);
+        applyGenreStatus(selDocGenre.id);
+        showToast('✦ Género fijado: ' + selDocGenre.name);
+      } catch(e) { showToast('Error al guardar'); }
+    }
+    window.fijarGenero = fijarGenero;
+
+    async function liberarGenero() {
+      const settings = { generoFijado: false, generoId: null, updatedAt: new Date().toISOString() };
+      window._settings = settings;
+      try {
+        if (window._fbSaveSettings) await window._fbSaveSettings(settings);
+        document.getElementById('gsIcon').textContent  = '📖';
+        document.getElementById('gsName').textContent  = 'Sin género fijado — libre elección';
+        document.getElementById('gsBadge').textContent = 'Libre';
+        document.getElementById('gsBadge').className   = 'genre-active-badge off';
+        selDocGenre = null;
+        document.querySelectorAll('.gc-doc').forEach(c => c.classList.remove('sel'));
+        document.getElementById('btnFijarGenero').disabled = true;
+        showToast('✦ Elección libre restaurada');
+      } catch(e) { showToast('Error al guardar'); }
+    }
+    window.liberarGenero = liberarGenero;
+
+    // ── LOAD TEXTOS ───────────────────────────────────────
+    function loadTextos() {
+      document.getElementById('textosContainer').innerHTML = '<div class="loading">Cargando textos del scriptorium...</div>';
+      if (window._fbLoadTextos) window._fbLoadTextos();
+      else { window._textos = []; renderTextos(); updateStats(); }
+    }
+    window.loadTextos = loadTextos;
+
+    // ── RENDER TEXTOS ─────────────────────────────────────
+    function renderTextos() {
+      const search   = (document.getElementById('searchInput')?.value||'').toLowerCase();
+      const gFilter  = document.getElementById('filterGenero')?.value || '';
+      const fbFilter = document.getElementById('filterFeedback')?.value || '';
+
+      let list = window._textos.filter(t => {
+        const matchSearch = !search ||
+          (t.nombre||'').toLowerCase().includes(search) ||
+          (t.texto||'').toLowerCase().includes(search);
+        const matchGenre  = !gFilter || t.generoId === gFilter;
+        const matchFb     = !fbFilter ||
+          (fbFilter==='con' && t.feedback) ||
+          (fbFilter==='sin' && !t.feedback);
+        return matchSearch && matchGenre && matchFb;
+      });
+
+      const container = document.getElementById('textosContainer');
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">📜</span><div class="empty-txt">Aún no hay textos en el scriptorium.</div></div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      const ul = document.createElement('div');
+      ul.className = 'textos-list';
+
+      list.forEach(t => {
+        const key = t._key;
+        const initials = (t.nombre||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+        const fecha = t.fecha ? new Date(t.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+        const hasFb = !!t.feedback;
+
+        const card = document.createElement('div');
+        card.className = 'texto-card';
+        card.id = 'tc_'+key;
+
+        card.innerHTML = `
+          <div class="texto-card-header" onclick="toggleCard('${key}')">
+            <div class="texto-avatar">${initials}</div>
+            <div class="texto-meta">
+              <div class="texto-nombre">${escHtml(t.nombre||'Anónimo')}</div>
+              <div class="texto-info">${fecha} · ${t.palabras||0} palabras · ${t.minutos||0} min</div>
+            </div>
+            <div class="texto-badges">
+              <span class="badge badge-genre">${t.emoji||''} ${escHtml(t.genero||'—')}</span>
+              <span class="badge badge-words">${t.palabras||0} pal.</span>
+              ${hasFb ? '<span class="badge badge-feedback">✦ feedback</span>' : ''}
+            </div>
+            <span class="texto-chevron">▶</span>
+          </div>
+          <div class="texto-body">
+            <div class="chispa-rem">«${escHtml(t.chispa||'—')}»</div>
+            <div class="texto-mapa">
+              <div class="mapa-item"><div class="mapa-item-label">Protagonista</div><div class="mapa-item-val">${escHtml(t.protagonista||'—')}</div></div>
+              <div class="mapa-item"><div class="mapa-item-label">Problema</div><div class="mapa-item-val">${escHtml(t.problema||'—')}</div></div>
+              <div class="mapa-item"><div class="mapa-item-label">Desenlace</div><div class="mapa-item-val">${escHtml(t.final||'—')}</div></div>
+            </div>
+            <div class="texto-content">${escHtml(t.texto||'')}</div>
+            <div class="feedback-section">
+              <div class="feedback-label">Observaciones del docente</div>
+              ${hasFb ? `<div class="feedback-existing" id="fbexist_${key}">${escHtml(t.feedback)}</div>` : ''}
+              <textarea class="feedback-textarea" id="fbta_${key}" placeholder="Escribe aquí tus observaciones para ${escHtml(t.nombre||'este alumno')}...">${escHtml(t.feedback||'')}</textarea>
+              <div class="feedback-actions">
+                <button class="btn-save-feedback" onclick="saveFeedback('${key}')">✦ Guardar observación</button>
+                <button class="btn-delete" onclick="deleteTexto('${key}')">Eliminar texto</button>
+              </div>
+            </div>
+          </div>`;
+        ul.appendChild(card);
+      });
+
+      container.appendChild(ul);
+    }
+    window.renderTextos = renderTextos;
+
+    // ── TOGGLE CARD ───────────────────────────────────────
+    function toggleCard(key) {
+      document.getElementById('tc_'+key)?.classList.toggle('open');
+    }
+    window.toggleCard = toggleCard;
+
+    // ── SAVE FEEDBACK ─────────────────────────────────────
+    async function saveFeedback(key) {
+      const ta = document.getElementById('fbta_'+key);
+      const feedback = ta?.value.trim();
+      if (!feedback) return;
+      try {
+        if (window._fbSaveFeedback) await window._fbSaveFeedback(key, feedback);
+        // Update local
+        const t = window._textos.find(x => x._key===key);
+        if (t) t.feedback = feedback;
+        showToast('✦ Observación guardada');
+        // Update badge
+        const card = document.getElementById('tc_'+key);
+        if (card && !card.querySelector('.badge-feedback')) {
+          const badges = card.querySelector('.texto-badges');
+          const b = document.createElement('span');
+          b.className='badge badge-feedback'; b.textContent='✦ feedback';
+          badges.appendChild(b);
+        }
+        // Update existing feedback div
+        const existDiv = document.getElementById('fbexist_'+key);
+        if (existDiv) { existDiv.textContent = feedback; }
+        updateStats();
+      } catch(e) { showToast('Error al guardar'); }
+    }
+    window.saveFeedback = saveFeedback;
+
+    // ── DELETE TEXTO ───────────────────────────────────────
+    async function deleteTexto(key) {
+      if (!confirm('¿Seguro que quieres eliminar este texto? No se puede recuperar.')) return;
+      try {
+        if (window._fbDeleteTexto) await window._fbDeleteTexto(key);
+        window._textos = window._textos.filter(t => t._key !== key);
+        renderTextos(); updateStats();
+        showToast('Texto eliminado del scriptorium');
+      } catch(e) { showToast('Error al eliminar'); }
+    }
+    window.deleteTexto = deleteTexto;
+
+    // ── UPDATE STATS ──────────────────────────────────────
+    function updateStats() {
+      const textos = window._textos;
+      const hoy = new Date().toDateString();
+      const hoyCount = textos.filter(t => t.fecha && new Date(t.fecha).toDateString()===hoy).length;
+      const media = textos.length ? Math.round(textos.reduce((a,t)=>a+(t.palabras||0),0)/textos.length) : 0;
+      const fbCount = textos.filter(t=>t.feedback).length;
+      document.getElementById('statTotal').textContent    = textos.length;
+      document.getElementById('statHoy').textContent      = hoyCount;
+      document.getElementById('statMedia').textContent    = media;
+      document.getElementById('statFeedback').textContent = fbCount;
+    }
+    window.updateStats = updateStats;
+
+    // ── HELPERS ───────────────────────────────────────────
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Allow Enter in login
+    document.getElementById('loginInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Escritores de Mapa — Laboratorio Creativo de Escritura.">
+  <title>Escritores de Mapa · El Laboratorio Creativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --parch:#f5edd8; --parch2:#fdf5e6; --parch3:#ede0c0;
+      --ink:#1a1208; --gold:#b8882a; --gold2:#d4a843; --gold3:#f0c050;
+      --gris:#6b5e48; --gris2:#9a8a70; --gris3:#8b7355;
+      --rust:#993C1D; --green:#3B6D11;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family:'EB Garamond',Georgia,serif; background:var(--parch); color:var(--ink); min-height:100vh; overflow-x:hidden; }
+    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 15% 15%,rgba(180,140,60,.07) 0%,transparent 55%),radial-gradient(ellipse at 85% 85%,rgba(140,90,30,.05) 0%,transparent 55%); pointer-events:none; z-index:0; }
+
+    .frame-outer { position:fixed; inset:6px; border:1px solid rgba(184,136,42,.3); border-radius:3px; pointer-events:none; z-index:300; }
+    .frame-outer::after { content:''; position:absolute; inset:4px; border:0.5px solid rgba(184,136,42,.14); border-radius:1px; }
+    .corner { position:fixed; width:34px; height:34px; z-index:301; pointer-events:none; }
+    .corner-tl { top:6px; left:6px; }
+    .corner-tr { top:6px; right:6px; transform:scaleX(-1); }
+    .corner-bl { bottom:6px; left:6px; transform:scaleY(-1); }
+    .corner-br { bottom:6px; right:6px; transform:scale(-1,-1); }
+
+    .app { position:relative; z-index:1; max-width:640px; margin:0 auto; padding:20px 22px 56px; }
+
+    /* HEADER */
+    .hdr { text-align:center; padding:26px 0 16px; border-bottom:1px solid rgba(184,136,42,.35); margin-bottom:24px; }
+    .hdr-pre { font-family:'Cinzel',serif; font-size:9px; letter-spacing:3.5px; color:var(--gold); margin-bottom:5px; }
+    .hdr-title { font-family:'Cinzel',serif; font-size:26px; font-weight:700; color:var(--ink); }
+    .hdr-title span { color:var(--gold); }
+    .hdr-sub { font-family:'EB Garamond',serif; font-style:italic; font-size:13px; color:var(--gris); margin-top:4px; }
+    .hdr::after { content:'✦ ✦ ✦'; display:block; font-size:9px; color:var(--gold); letter-spacing:8px; margin-top:10px; opacity:.6; }
+
+    /* NOMBRE ALUMNO */
+    .name-bar { display:flex; gap:10px; align-items:center; margin-bottom:22px; padding:12px 16px; background:rgba(196,131,42,.05); border:0.5px solid rgba(184,136,42,.3); border-radius:9px; }
+    .name-bar label { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1.5px; color:var(--gold); white-space:nowrap; }
+    .name-bar input { flex:1; border:none; background:transparent; font-family:'EB Garamond',serif; font-size:15px; color:var(--ink); outline:none; }
+    .name-bar input::placeholder { color:rgba(107,94,72,.45); font-style:italic; }
+
+    /* STEPS */
+    .steps { display:flex; align-items:flex-start; margin-bottom:26px; }
+    .stp { display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; }
+    .stp-ring { width:36px; height:36px; border-radius:50%; border:1.5px solid rgba(184,136,42,.35); display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:12px; font-weight:700; color:rgba(184,136,42,.5); background:var(--parch); transition:all .35s; }
+    .stp.done .stp-ring { background:var(--gold); border-color:var(--gold); color:var(--parch); }
+    .stp.active .stp-ring { background:var(--ink); border-color:var(--ink); color:var(--gold2); box-shadow:0 0 0 4px rgba(184,136,42,.15); }
+    .stp-name { font-family:'Cinzel',serif; font-size:9px; letter-spacing:.8px; color:var(--gris2); text-align:center; line-height:1.3; transition:color .3s; }
+    .stp.active .stp-name { color:var(--ink); }
+    .stp.done .stp-name { color:var(--gold); }
+    .stp-line { flex:1; height:1px; background:rgba(184,136,42,.22); margin-bottom:22px; max-width:52px; transition:background .4s; }
+    .stp-line.done { background:var(--gold); }
+
+    /* SCREENS */
+    .scr { display:none; }
+    .scr.active { display:block; animation:rise .28s ease; }
+    @keyframes rise { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+    .divider { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+    .divider::before,.divider::after { content:''; flex:1; height:.5px; background:rgba(184,136,42,.38); }
+    .divider-txt { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2.5px; color:var(--gold); white-space:nowrap; }
+
+    /* GENRE LOCK BANNER */
+    .genre-lock { display:flex; align-items:center; gap:12px; padding:12px 16px; background:rgba(26,18,8,.04); border:1px solid rgba(184,136,42,.45); border-radius:9px; margin-bottom:20px; }
+    .genre-lock-icon { font-size:26px; }
+    .genre-lock-info { flex:1; }
+    .genre-lock-name { font-family:'Cinzel',serif; font-size:13px; font-weight:700; color:var(--ink); }
+    .genre-lock-sub { font-family:'EB Garamond',serif; font-style:italic; font-size:12px; color:var(--gris); }
+    .genre-lock-badge { font-family:'Cinzel',serif; font-size:8px; letter-spacing:1px; color:var(--gold); background:rgba(184,136,42,.1); border:0.5px solid rgba(184,136,42,.3); padding:3px 8px; border-radius:4px; }
+
+    /* GENRE GRID */
+    .genre-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:22px; }
+    .gc { border:0.5px solid rgba(184,136,42,.35); border-radius:10px; padding:14px 10px 12px; cursor:pointer; transition:all .2s; background:rgba(245,237,216,.55); text-align:center; position:relative; }
+    .gc:hover { background:rgba(196,131,42,.08); border-color:rgba(184,136,42,.6); transform:translateY(-1px); }
+    .gc.sel { border:1.5px solid var(--ink); background:rgba(26,18,8,.04); }
+    .gc.locked { opacity:.45; cursor:not-allowed; pointer-events:none; }
+    .gc-emoji { font-size:22px; display:block; margin-bottom:5px; }
+    .gc-name { font-family:'Cinzel',serif; font-size:10px; font-weight:600; letter-spacing:.5px; color:var(--ink); margin-bottom:2px; }
+    .gc-hint { font-family:'EB Garamond',serif; font-style:italic; font-size:10px; color:var(--gris3); line-height:1.3; }
+    .gc-tick { position:absolute; top:7px; right:9px; font-size:11px; color:var(--gold); display:none; }
+    .gc.sel .gc-tick { display:block; }
+
+    /* SPARK */
+    .spark-card { min-height:86px; border:0.5px dashed rgba(184,136,42,.5); border-radius:10px; background:rgba(196,131,42,.05); padding:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; margin-bottom:10px; }
+    .spark-card:hover { background:rgba(196,131,42,.1); }
+    .spark-txt { font-family:'EB Garamond',serif; font-style:italic; font-size:19px; color:var(--ink); line-height:1.5; text-align:center; }
+    .spark-empty { font-family:'EB Garamond',serif; font-style:italic; font-size:14px; color:rgba(184,136,42,.55); text-align:center; }
+    .spark-new-btn { width:100%; padding:9px; border:0.5px solid rgba(107,94,72,.38); border-radius:8px; background:transparent; font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; color:var(--gris); cursor:pointer; transition:all .2s; margin-bottom:10px; }
+    .spark-new-btn:hover { background:rgba(107,94,72,.07); }
+
+    /* MAP */
+    .map-intro { font-family:'EB Garamond',serif; font-style:italic; font-size:15px; color:var(--gris); margin-bottom:18px; line-height:1.5; }
+    .map-fields { display:flex; flex-direction:column; gap:13px; margin-bottom:20px; }
+    .mf { display:flex; flex-direction:column; gap:5px; }
+    .mf-label { display:flex; align-items:center; gap:7px; font-family:'Cinzel',serif; font-size:10px; letter-spacing:.8px; color:var(--gris); }
+    .mf-input { width:100%; padding:10px 13px; border:0.5px solid rgba(184,136,42,.35); border-radius:9px; font-family:'EB Garamond',serif; font-size:15px; color:var(--ink); background:var(--parch2); outline:none; transition:border-color .2s; }
+    .mf-input:focus { border-color:rgba(184,136,42,.65); }
+    .mf-input::placeholder { color:rgba(107,94,72,.45); font-style:italic; }
+    .mf-sub { font-family:'EB Garamond',serif; font-style:italic; font-size:11px; color:var(--gris2); padding-left:2px; }
+
+    /* WRITE */
+    .timer-chip { display:inline-flex; align-items:center; gap:7px; padding:5px 13px; border-radius:20px; border:0.5px solid rgba(184,136,42,.38); background:rgba(196,131,42,.06); font-family:'Cinzel',serif; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:14px; }
+    .t-dot { width:7px; height:7px; border-radius:50%; background:var(--rust); animation:blink 1.1s infinite; }
+    .t-dot.off { animation:none; background:rgba(107,94,72,.35); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+    .spark-reminder { padding:10px 15px; background:rgba(196,131,42,.06); border-left:2.5px solid rgba(184,136,42,.45); border-radius:0 9px 9px 0; margin-bottom:14px; font-family:'EB Garamond',serif; font-style:italic; font-size:15px; color:var(--gris); line-height:1.45; }
+    .write-top { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; }
+    .write-heading { font-family:'Cinzel',serif; font-size:12px; letter-spacing:1px; color:var(--ink); }
+    .wc { font-family:'Cinzel',serif; font-size:10px; color:var(--gris2); transition:color .3s; }
+    .wc.ok { color:var(--green); }
+    .write-area { width:100%; min-height:240px; padding:14px 16px; border:0.5px solid rgba(184,136,42,.35); border-radius:10px; font-family:'EB Garamond',serif; font-size:17px; line-height:1.8; color:var(--ink); background:var(--parch2); outline:none; resize:vertical; transition:border-color .2s; }
+    .write-area:focus { border-color:rgba(184,136,42,.65); }
+    .write-area::placeholder { color:rgba(107,94,72,.45); font-style:italic; }
+
+    /* BUTTONS */
+    .btn-main { width:100%; padding:13px; background:var(--ink); color:var(--gold2); font-family:'Cinzel',serif; font-size:11px; font-weight:700; letter-spacing:2px; border:none; border-radius:9px; cursor:pointer; transition:all .2s; margin-top:6px; }
+    .btn-main:hover { background:#2d1f0a; color:var(--gold3); transform:translateY(-1px); }
+    .btn-main:active { transform:scale(.99); }
+    .btn-main:disabled { opacity:.3; cursor:not-allowed; transform:none; }
+    .btn-ghost { width:100%; padding:10px; background:transparent; color:var(--gris); font-family:'Cinzel',serif; font-size:10px; letter-spacing:1px; border:0.5px solid rgba(107,94,72,.38); border-radius:9px; cursor:pointer; margin-top:8px; transition:all .2s; }
+    .btn-ghost:hover { background:rgba(107,94,72,.07); }
+
+    /* FINISH */
+    .finish-seal { text-align:center; padding:24px 16px 18px; border:0.5px solid rgba(184,136,42,.42); border-radius:12px; background:rgba(196,131,42,.05); margin-bottom:18px; }
+    .seal-icon { font-size:40px; margin-bottom:10px; display:block; }
+    .seal-title { font-family:'Cinzel',serif; font-size:20px; font-weight:700; color:var(--ink); margin-bottom:5px; }
+    .seal-sub { font-family:'EB Garamond',serif; font-style:italic; font-size:14px; color:var(--gris); line-height:1.5; }
+    .stats { display:flex; gap:10px; margin-top:16px; }
+    .stat { flex:1; background:var(--parch3); border-radius:8px; padding:12px 8px; text-align:center; }
+    .stat-n { font-family:'Cinzel',serif; font-size:22px; font-weight:700; color:var(--ink); }
+    .stat-l { font-family:'EB Garamond',serif; font-style:italic; font-size:11px; color:var(--gris3); margin-top:2px; }
+    .final-box { border:0.5px solid rgba(184,136,42,.35); border-radius:10px; padding:16px 18px; margin-bottom:16px; background:var(--parch2); }
+    .final-box-label { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; color:var(--gold); margin-bottom:10px; }
+    .final-txt { font-family:'EB Garamond',serif; font-size:16px; line-height:1.8; white-space:pre-wrap; color:var(--ink); }
+
+    /* TOAST */
+    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--gold2); font-family:'Cinzel',serif; font-size:10px; letter-spacing:1px; padding:10px 20px; border-radius:20px; opacity:0; transition:all .3s; z-index:400; pointer-events:none; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    @media(max-width:480px) {
+      .hdr-title { font-size:21px; }
+      .genre-grid { grid-template-columns:repeat(2,1fr); }
+      .app { padding:14px 14px 48px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame-outer"></div>
+  <svg class="corner corner-tl" viewBox="0 0 34 34" fill="none"><path d="M4 30L4 8Q4 4 8 4L30 4" stroke="#b8882a" stroke-width="1.5" opacity=".55"/><circle cx="4" cy="4" r="2.5" fill="#b8882a" opacity=".55"/></svg>
+  <svg class="corner corner-tr" viewBox="0 0 34 34" fill="none"><path d="M4 30L4 8Q4 4 8 4L30 4" stroke="#b8882a" stroke-width="1.5" opacity=".55"/><circle cx="4" cy="4" r="2.5" fill="#b8882a" opacity=".55"/></svg>
+  <svg class="corner corner-bl" viewBox="0 0 34 34" fill="none"><path d="M4 30L4 8Q4 4 8 4L30 4" stroke="#b8882a" stroke-width="1.5" opacity=".55"/><circle cx="4" cy="4" r="2.5" fill="#b8882a" opacity=".55"/></svg>
+  <svg class="corner corner-br" viewBox="0 0 34 34" fill="none"><path d="M4 30L4 8Q4 4 8 4L30 4" stroke="#b8882a" stroke-width="1.5" opacity=".55"/><circle cx="4" cy="4" r="2.5" fill="#b8882a" opacity=".55"/></svg>
+
+  <div class="app">
+    <header class="hdr">
+      <div class="hdr-pre">Scriptorium · Laboratorio Creativo</div>
+      <div class="hdr-title">Escritores de <span>Mapa</span></div>
+      <div class="hdr-sub">Elige tu género · Traza tu mapa · Escribe tu historia</div>
+    </header>
+
+    <!-- Nombre alumno -->
+    <div class="name-bar">
+      <label for="alumnoNombre">Escriba tu nombre:</label>
+      <input id="alumnoNombre" type="text" placeholder="ej: Lucía García" autocomplete="off">
+    </div>
+
+    <!-- Steps -->
+    <nav class="steps">
+      <div class="stp active" id="st0"><div class="stp-ring">I</div><div class="stp-name">Género<br>&amp; chispa</div></div>
+      <div class="stp-line" id="sl0"></div>
+      <div class="stp" id="st1"><div class="stp-ring">II</div><div class="stp-name">Tu<br>mapa</div></div>
+      <div class="stp-line" id="sl1"></div>
+      <div class="stp" id="st2"><div class="stp-ring">III</div><div class="stp-name">A<br>escribir</div></div>
+    </nav>
+
+    <!-- ── SC1: GÉNERO + CHISPA ──────────────────────────── -->
+    <section class="scr active" id="sc1">
+      <div class="divider"><span class="divider-txt">Elige tu género</span></div>
+      <div id="genreLockBanner" style="display:none">
+        <div class="genre-lock" id="genreLockCard">
+          <span class="genre-lock-icon" id="glIcon"></span>
+          <div class="genre-lock-info">
+            <div class="genre-lock-name" id="glName"></div>
+            <div class="genre-lock-sub">El docente ha elegido el género de hoy</div>
+          </div>
+          <span class="genre-lock-badge">Sesión activa</span>
+        </div>
+      </div>
+      <div class="genre-grid" id="genreGrid"></div>
+      <div id="sparkSection" style="display:none">
+        <div class="divider"><span class="divider-txt" id="sparkDivLabel">Tu chispa de arranque</span></div>
+        <div class="spark-card" id="sparkCard" onclick="newSpark()">
+          <span class="spark-empty">Pulsa para encender tu historia...</span>
+        </div>
+        <button class="spark-new-btn" onclick="newSpark()">↻ Dame otra chispa diferente</button>
+        <button class="btn-main" id="btnToMap" disabled onclick="goTo(2)">✦ Con esta chispa, trazo mi mapa →</button>
+        <button class="btn-ghost" onclick="newSpark()">Prefiero otra chispa</button>
+      </div>
+    </section>
+
+    <!-- ── SC2: MINI-MAPA ────────────────────────────────── -->
+    <section class="scr" id="sc2">
+      <div class="divider"><span class="divider-txt">Tu mapa — 2 minutos</span></div>
+      <p class="map-intro">Antes de escribir, responde estas tres preguntas en una sola frase cada una.</p>
+      <div class="map-fields">
+        <div class="mf">
+          <label class="mf-label" for="m1">🧑 ¿Quién protagoniza tu historia?</label>
+          <input class="mf-input" id="m1" type="text" placeholder="ej: una niña que no puede dormir" oninput="checkMap()" autocomplete="off">
+          <div class="mf-sub">Puede ser una persona, un animal o incluso un objeto.</div>
+        </div>
+        <div class="mf">
+          <label class="mf-label" for="m2">⚡ ¿Qué le pasa o qué problema tiene?</label>
+          <input class="mf-input" id="m2" type="text" placeholder="ej: oye pasos en el tejado cada noche" oninput="checkMap()" autocomplete="off">
+          <div class="mf-sub">Aquí entra tu chispa de arranque.</div>
+        </div>
+        <div class="mf">
+          <label class="mf-label" for="m3">🔚 ¿Cómo acaba (más o menos)?</label>
+          <input class="mf-input" id="m3" type="text" placeholder="ej: descubre que era un pájaro perdido" oninput="checkMap()" autocomplete="off">
+          <div class="mf-sub">No tiene que ser el final exacto, solo una pista.</div>
+        </div>
+      </div>
+      <button class="btn-main" id="btnToWrite" disabled onclick="goTo(3)">✦ ¡Empezar a escribir! →</button>
+      <button class="btn-ghost" onclick="goTo(1)">← Cambiar género o chispa</button>
+    </section>
+
+    <!-- ── SC3: ESCRITURA ────────────────────────────────── -->
+    <section class="scr" id="sc3">
+      <div class="timer-chip"><span class="t-dot" id="tDot"></span><span id="tLabel">15:00</span></div>
+      <div class="spark-reminder" id="sparkReminder"></div>
+      <div class="write-top">
+        <div class="write-heading">Tu historia</div>
+        <div class="wc" id="wcLabel">0 palabras</div>
+      </div>
+      <textarea class="write-area" id="writeArea" placeholder="Empieza aquí..." oninput="updateWC()"></textarea>
+      <button class="btn-main" style="margin-top:16px" onclick="finish()">✦ Terminar y guardar mi texto</button>
+    </section>
+
+    <!-- ── SC4: FINAL ────────────────────────────────────── -->
+    <section class="scr" id="sc4">
+      <div class="finish-seal">
+        <span class="seal-icon" id="sealIcon">✍️</span>
+        <div class="seal-title" id="sealTitle">¡Lo has conseguido!</div>
+        <div class="seal-sub" id="sealSub"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-n" id="stW">0</div><div class="stat-l">palabras</div></div>
+          <div class="stat"><div class="stat-n" id="stT">0'</div><div class="stat-l">minutos</div></div>
+          <div class="stat"><div class="stat-n" id="stG">—</div><div class="stat-l">género</div></div>
+        </div>
+      </div>
+      <div class="final-box">
+        <div class="final-box-label">Tu texto</div>
+        <div class="final-txt" id="finalTxt"></div>
+      </div>
+      <button class="btn-main" onclick="copyText()">✦ Copiar mi texto al portapapeles</button>
+      <button class="btn-ghost" onclick="restart()">Escribir otra historia</button>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getDatabase, ref, push, get, set } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDemo-reemplaza-con-tu-config",
+      authDomain: "app-reserva-de-portatiles.firebaseapp.com",
+      databaseURL: "https://app-reserva-de-portatiles-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "app-reserva-de-portatiles",
+      storageBucket: "app-reserva-de-portatiles.appspot.com",
+      messagingSenderId: "000000000000",
+      appId: "1:000000000000:web:000000000000"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // ── LOAD DOCENTE SETTINGS (género fijado) ──────────────
+    async function loadDocenteSettings() {
+      try {
+        const snap = await get(ref(db, 'escritores/settings'));
+        if (snap.exists()) {
+          const s = snap.val();
+          window._docenteSettings = s;
+          if (s.generoFijado && s.generoId) {
+            applyLockedGenre(s.generoId);
+          }
+        }
+      } catch(e) { console.warn('Sin conexión Firebase', e); }
+    }
+
+    window.saveTextoToFirebase = async function(datos) {
+      try {
+        await push(ref(db, 'escritores/textos'), datos);
+        showToast('✦ Texto guardado en el scriptorium');
+      } catch(e) {
+        showToast('Sin conexión — texto copiado al portapapeles');
+        navigator.clipboard.writeText(datos.texto).catch(()=>{});
+      }
+    };
+
+    loadDocenteSettings();
+  </script>
+
+  <script>
+    const GENRES = [
+      { id:'terror',   name:'Terror',       emoji:'👻', hint:'Impacto en un párrafo',
+        sparks:['Esa noche, el espejo del baño no devolvía mi reflejo.','La puerta se abrió sola a las 3 de la madrugada.','Mis zapatos estaban al revés cuando encendí la luz.','El perro llevaba tres días mirando el mismo rincón vacío.','Había un mensaje en el vapor del espejo que yo no había escrito.','La foto familiar tenía una cara más que la última vez.','Alguien había doblado las esquinas de todas las páginas de mi libro.'] },
+      { id:'aventura', name:'Aventura',      emoji:'🗺️', hint:'Acción desde el inicio',
+        sparks:['El mapa del desván marcaba un lugar que no existe.','Teníamos dos horas antes de que subiera la marea.','La caja llevaba mi nombre, pero yo nunca la había visto.','El camino terminaba en una puerta en medio del bosque.','Alguien dejó una mochila preparada con mis cosas favoritas.','El faro llevaba cincuenta años apagado. Esa noche se encendió.','Encontré un billete de tren para una ciudad sin nombre en el mapa.'] },
+      { id:'humor',    name:'Humor',         emoji:'😂', hint:'Giro cómico al final',
+        sparks:['Mi abuela ganó el campeonato de videojuegos.','Confundí la sal con el azúcar y se lo di al director.','Mi perro organizó una fiesta mientras yo no estaba.','El robot aspirador decidió que era el dueño de la casa.','El loro del vecino empezó a contar secretos que nadie le había dicho.','Me equivoqué de vestuario y salí disfrazado de coliflor.','Nuestro profe llegó en patinete y se cayó dos veces.'] },
+      { id:'fantasia', name:'Fantasía',      emoji:'🐉', hint:'Un mundo propio',
+        sparks:['En ese pueblo, los sueños se vendían los martes.','Su sombra obedecía órdenes distintas a las suyas.','Cada vez que llovía, los objetos perdidos volvían solos.','El río fluía hacia atrás una vez al año.','Había una biblioteca donde los libros te elegían a ti.','El último dragón del reino trabajaba de cartero.','La luna tenía una puerta que solo se abría en los eclipses.'] },
+      { id:'realista', name:'Realista',      emoji:'🏫', hint:'Un momento cotidiano',
+        sparks:['El último día de clase, nadie quería decir adiós.','Encontré una foto con mi cara que no recordaba.','Mi mejor amigo se mudó sin decirme nada.','La nota que cayó de su mochila lo cambió todo.','Ese partido lo perdimos por un segundo de descuido.','Llevaba meses ensayando ese discurso. Lo olvidé todo.','El banco del parque donde siempre nos sentábamos ya no estaba.'] },
+      { id:'ciencia',  name:'Sci-fi',        emoji:'🚀', hint:'Un futuro cercano',
+        sparks:['En 2045, los robots pedían el día libre los domingos.','Mi clon llegó a clase antes que yo y sacó mejor nota.','La IA de mi móvil empezó a escribirme mensajes en código.','Todos recordaban el mismo sueño exacto que yo.','Alguien instaló una farola gigante en la luna.','El traductor universal no entendía mi idioma.','La primera lluvia después del Gran Apagón sabía diferente.'] }
+    ];
+    const FINISH_TITLES = { terror:'¡Qué escalofríos!', aventura:'¡Gran aventura!', humor:'¡Muy buena historia!', fantasia:'¡Mundo creado!', realista:'¡Muy bien contado!', ciencia:'¡Al futuro y más allá!' };
+
+    let sel=null, spark='', timerSecs=900, timerInt=null, startTime=null;
+    window._docenteSettings = {};
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function applyLockedGenre(genreId) {
+      const gn = GENRES.find(g => g.id === genreId);
+      if (!gn) return;
+      document.getElementById('genreLockBanner').style.display = 'block';
+      document.getElementById('glIcon').textContent = gn.emoji;
+      document.getElementById('glName').textContent = gn.name;
+      // Lock all other genres
+      renderGenres();
+      document.querySelectorAll('.gc').forEach(c => {
+        if (c.id !== 'gc_'+genreId) c.classList.add('locked');
+      });
+      pickGenre(gn);
+    }
+    window.applyLockedGenre = applyLockedGenre;
+
+    function renderGenres() {
+      const grid = document.getElementById('genreGrid');
+      grid.innerHTML = '';
+      GENRES.forEach(gn => {
+        const d = document.createElement('div');
+        d.className = 'gc'; d.id = 'gc_'+gn.id;
+        d.innerHTML = `<span class="gc-emoji">${gn.emoji}</span><div class="gc-name">${gn.name}</div><div class="gc-hint">${gn.hint}</div><span class="gc-tick">✦</span>`;
+        d.addEventListener('click', () => pickGenre(gn));
+        grid.appendChild(d);
+      });
+    }
+
+    function pickGenre(gn) {
+      sel = gn;
+      document.querySelectorAll('.gc').forEach(c => c.classList.remove('sel'));
+      const el = document.getElementById('gc_'+gn.id);
+      if (el) el.classList.add('sel');
+      document.getElementById('sparkSection').style.display = 'block';
+      document.getElementById('sparkDivLabel').textContent = gn.name.toUpperCase()+' · TU CHISPA DE ARRANQUE';
+      showSpark();
+    }
+
+    function showSpark() {
+      if (!sel) return;
+      const pool = sel.sparks;
+      let c = pool[Math.floor(Math.random()*pool.length)];
+      let i=0; while (c===spark && pool.length>1 && i++<10) c=pool[Math.floor(Math.random()*pool.length)];
+      spark = c;
+      document.getElementById('sparkCard').innerHTML = `<span class="spark-txt">«${spark}»</span>`;
+      document.getElementById('btnToMap').disabled = false;
+    }
+    window.newSpark = showSpark;
+
+    function checkMap() {
+      const ok = ['m1','m2','m3'].every(id => document.getElementById(id).value.trim().length > 3);
+      document.getElementById('btnToWrite').disabled = !ok;
+    }
+    window.checkMap = checkMap;
+
+    function goTo(n) {
+      document.querySelectorAll('.scr').forEach(s => s.classList.remove('active'));
+      document.getElementById('sc'+n).classList.add('active');
+      setSteps(n-1);
+      window.scrollTo({top:0,behavior:'smooth'});
+      if (n===3) { document.getElementById('sparkReminder').textContent='«'+spark+'»'; startTimer(); document.getElementById('writeArea').focus(); }
+    }
+    window.goTo = goTo;
+
+    function setSteps(a) {
+      [0,1,2].forEach(i => {
+        document.getElementById('st'+i).className='stp'+(i<a?' done':i===a?' active':'');
+        if(i<2) document.getElementById('sl'+i).className='stp-line'+(i<a?' done':'');
+      });
+    }
+
+    function startTimer() {
+      if(timerInt) clearInterval(timerInt);
+      startTime=Date.now(); timerSecs=900;
+      timerInt=setInterval(()=>{
+        timerSecs--;
+        const m=Math.floor(timerSecs/60), s=timerSecs%60;
+        document.getElementById('tLabel').textContent=m+':'+(s<10?'0':'')+s;
+        if(timerSecs<=0){clearInterval(timerInt);document.getElementById('tDot').className='t-dot off';}
+      },1000);
+    }
+
+    function updateWC() {
+      const w=document.getElementById('writeArea').value.trim().split(/\s+/).filter(Boolean).length;
+      const el=document.getElementById('wcLabel');
+      el.textContent=w+(w===1?' palabra':' palabras');
+      el.className='wc'+(w>=50?' ok':'');
+    }
+    window.updateWC=updateWC;
+
+    async function finish() {
+      clearInterval(timerInt);
+      document.getElementById('tDot').className='t-dot off';
+      const txt=document.getElementById('writeArea').value.trim();
+      const w=txt?txt.split(/\s+/).filter(Boolean).length:0;
+      const mins=startTime?Math.round((Date.now()-startTime)/60000):0;
+      const nombre=document.getElementById('alumnoNombre').value.trim()||'Alumno anónimo';
+
+      document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active'));
+      document.getElementById('sc4').classList.add('active');
+      setSteps(3);
+      window.scrollTo({top:0,behavior:'smooth'});
+
+      document.getElementById('stW').textContent=w;
+      document.getElementById('stT').textContent=mins+"'";
+      document.getElementById('stG').textContent=sel?sel.emoji:'—';
+      document.getElementById('sealIcon').textContent=sel?sel.emoji:'✍️';
+      document.getElementById('sealTitle').textContent=sel?FINISH_TITLES[sel.id]:'¡Lo has conseguido!';
+      document.getElementById('sealSub').textContent=`Has escrito ${w} palabras en ${mins} minutos. Tu historia de ${sel?sel.name.toLowerCase():'escritura'} está lista.`;
+      document.getElementById('finalTxt').textContent=txt;
+
+      // Guardar en Firebase
+      const datos = {
+        nombre, genero: sel?sel.name:'—', generoId: sel?sel.id:'—',
+        emoji: sel?sel.emoji:'✍️', chispa: spark,
+        protagonista: document.getElementById('m1').value.trim(),
+        problema: document.getElementById('m2').value.trim(),
+        final: document.getElementById('m3').value.trim(),
+        texto: txt, palabras: w, minutos: mins,
+        fecha: new Date().toISOString(),
+        timestamp: Date.now()
+      };
+      if (window.saveTextoToFirebase) await window.saveTextoToFirebase(datos);
+    }
+    window.finish=finish;
+
+    function copyText() {
+      const txt=document.getElementById('finalTxt').textContent;
+      navigator.clipboard.writeText(txt).then(()=>{
+        showToast('✦ Texto copiado al portapapeles');
+      }).catch(()=>{
+        const ta=document.createElement('textarea');
+        ta.value=txt; ta.style.cssText='position:fixed;opacity:0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        showToast('✦ Copiado');
+      });
+    }
+    window.copyText=copyText;
+
+    function restart() {
+      sel=null;spark='';timerSecs=900;startTime=null;clearInterval(timerInt);
+      ['m1','m2','m3'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('writeArea').value='';
+      document.getElementById('sparkSection').style.display='none';
+      document.getElementById('btnToMap').disabled=true;
+      document.getElementById('btnToWrite').disabled=true;
+      document.getElementById('tLabel').textContent='15:00';
+      document.getElementById('tDot').className='t-dot';
+      document.getElementById('wcLabel').textContent='0 palabras';
+      document.querySelectorAll('.scr').forEach(s=>s.classList.remove('active'));
+      document.getElementById('sc1').classList.add('active');
+      setSteps(0);
+      renderGenres();
+      // Re-apply locked genre if active
+      if(window._docenteSettings?.generoFijado && window._docenteSettings?.generoId) {
+        applyLockedGenre(window._docenteSettings.generoId);
+      }
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    window.restart=restart;
+
+    renderGenres();
+  </script>
+</body>
+</html>
